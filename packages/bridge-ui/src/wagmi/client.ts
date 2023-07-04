@@ -65,6 +65,22 @@ const { chains, provider } = configureChains(
   ],
 );
 
+const themeMode = localStorage.getItem('theme') as 'dark' | 'light' ?? 'dark';
+const themeVariables = {
+  // DaisyUI modal has a z-index of 999 by default
+  // WalletConnect modal has a z-index of 89 by default
+  // Let's increase wc to beat daisyui's modal
+  '--wcm-z-index': '9999',
+  '--wcm-background-color': '#E81899',
+  '--wcm-accent-color': '#E81899',
+  // TODO: add more vars. See ThemeCtrlState.themeVariables type
+
+  // The following vars aren't documented, but they exist and can be changed
+  // @ts-ignore
+  // '--wcm-color-fg-1': '#E81899',
+  // TODO: add more unofficial vars
+};
+
 export const client = createClient({
   autoConnect: true,
   provider,
@@ -76,17 +92,8 @@ export const client = createClient({
         projectId: WALLETCONNECT_PROJECT_ID,
         showQrModal: true,
         qrModalOptions: {
-          themeVariables: {
-          // DaisyUI modal has a z-index of 999 by default
-          // WalletConnect modal has a z-index of 89 by default
-          // Let's increase wc to beat daisyui's modal
-            '--wcm-z-index': '9999',
-            '--wcm-background-color': '#E81899',
-
-            // @ts-ignore
-            // '--wcm-color-fg-1': '#E81899',
-            '--wcm-accent-color': '#E81899',
-          }
+          themeMode,
+          themeVariables,
         }
       },
     }),
