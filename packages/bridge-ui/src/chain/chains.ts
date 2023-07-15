@@ -2,6 +2,7 @@ import type { Chain as WagmiChain } from 'wagmi';
 
 import Eth from '../components/icons/ETH.svelte';
 import Taiko from '../components/icons/TKO.svelte';
+import L3Chain from '../components/icons/L3Chain.svelte';
 import {
   L1_BRIDGE_ADDRESS,
   L1_CHAIN_ID,
@@ -20,7 +21,7 @@ import {
 } from '../constants/envVars';
 import type { Chain, ChainID } from '../domain/chain';
 
-export const mainnetChain: Chain = {
+export const L1Chain: Chain = {
   id: L1_CHAIN_ID,
   name: L1_CHAIN_NAME,
   rpc: L1_RPC,
@@ -32,7 +33,7 @@ export const mainnetChain: Chain = {
   signalServiceAddress: L1_SIGNAL_SERVICE_ADDRESS,
 };
 
-export const taikoChain: Chain = {
+export const L2Chain: Chain = {
   id: L2_CHAIN_ID,
   name: L2_CHAIN_NAME,
   rpc: L2_RPC,
@@ -45,11 +46,11 @@ export const taikoChain: Chain = {
 };
 
 export const chains: Record<ChainID, Chain> = {
-  [L1_CHAIN_ID]: mainnetChain,
-  [L2_CHAIN_ID]: taikoChain,
+  [L1_CHAIN_ID]: L1Chain,
+  [L2_CHAIN_ID]: L2Chain,
 };
 
-// TODO: can we not merge this chain into mainnetChain?
+// TODO: can we not merge this chain into L1Chain?
 export const mainnetWagmiChain: WagmiChain = {
   id: L1_CHAIN_ID,
   name: L1_CHAIN_NAME,
@@ -67,7 +68,7 @@ export const mainnetWagmiChain: WagmiChain = {
   },
 };
 
-// TODO: same here, merge it into taikoChain
+// TODO: same here, merge it into L2Chain
 export const taikoWagmiChain: WagmiChain = {
   id: L2_CHAIN_ID,
   name: L2_CHAIN_NAME,
