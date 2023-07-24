@@ -6,8 +6,6 @@
 
 pragma solidity ^0.8.20;
 
-import { Test } from "forge-std/Test.sol";
-import { console2 } from "forge-std/console2.sol";
 import { AddressResolver } from "../common/AddressResolver.sol";
 import { EssentialContract } from "../common/EssentialContract.sol";
 import { IProverPool } from "./IProverPool.sol";
@@ -360,8 +358,6 @@ contract ProverPool is EssentialContract, IProverPool {
             }
             proverIdToAddress[proverId] = addr;
             staker.proverId = proverId;
-            // console2.log("staker.proverId");
-            // console2.log(staker.proverId);
 
             // Insert the prover in the top prover list
             provers[proverId] = Prover({
