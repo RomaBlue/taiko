@@ -46,12 +46,12 @@ contract TestProverPool is Test {
         registerAddress("prover_pool", address(pp));
     }
 
-    function testProverPool__32_stakers_replaced_by_another_32() external {
-        uint16 baseCapacity = 128;
+    function testProverPool_32_stakers_replaced_by_another_32() external {
+        uint16 firstBaseCapacity = 128; // Staked amount is calculated based on it.
 
         for (uint16 i; i < 32; ++i) {
             address addr = randomAddress(i);
-            uint16 capacity = baseCapacity + i;
+            uint16 capacity = firstBaseCapacity + i;
             depositTaikoToken(addr, tokenPerCapacity * capacity, 1 ether);
             vm.prank(addr, addr);
             pp.stake(uint64(capacity) * 10_000 * 1e8, 10 + i, capacity);
@@ -63,18 +63,20 @@ contract TestProverPool is Test {
         (provers, stakers) = printProvers();
         for (uint16 i; i < provers.length; ++i) {
             assertEq(
-                provers[i].stakedAmount, uint64(baseCapacity + i) * 10_000 * 1e8
+                provers[i].stakedAmount, uint64(firstBaseCapacity + i) * 10_000 * 1e8
             );
             assertEq(provers[i].rewardPerGas, 10 + i);
-            assertEq(provers[i].currentCapacity, baseCapacity + i);
+            assertEq(provers[i].currentCapacity, firstBaseCapacity + i);
         }
 
         // The same 32 provers restake
         vm.warp(block.timestamp + 24 hours);
-        baseCapacity = 200;
+        // This basically tells also how much additionally (!)
+        // the prover stakes.
+        uint16 secondBaseCapacity = 200;
         for (uint16 i; i < provers.length; ++i) {
             address addr = randomAddress(i);
-            uint16 capacity = baseCapacity + i;
+            uint16 capacity = secondBaseCapacity + i;
             depositTaikoToken(addr, tokenPerCapacity * capacity, 1 ether);
             vm.prank(addr, addr);
             pp.stake(uint64(capacity) * 10_000 * 1e8, 10 + i, capacity);
@@ -84,14 +86,14 @@ contract TestProverPool is Test {
         vm.warp(block.timestamp + 24 hours);
         for (uint16 i; i < provers.length; ++i) {
             assertEq(
-                provers[i].stakedAmount, uint64(baseCapacity + i) * 10_000 * 1e8
+                provers[i].stakedAmount, uint64((secondBaseCapacity + firstBaseCapacity) + i*2) * 10_000 * 1e8
             );
             assertEq(provers[i].rewardPerGas, 10 + i);
-            assertEq(provers[i].currentCapacity, baseCapacity + i);
+            assertEq(provers[i].currentCapacity, secondBaseCapacity + i);
         }
 
         // Different 32 provers stake
-        baseCapacity = 500;
+        uint16 baseCapacity = 500;
         vm.warp(block.timestamp + 24 hours);
         for (uint16 i; i < provers.length; ++i) {
             address addr = randomAddress(i + 12_345);
@@ -110,6 +112,35 @@ contract TestProverPool is Test {
             assertEq(provers[i].rewardPerGas, 10 + i);
             assertEq(provers[i].currentCapacity, baseCapacity + i);
         }
+    }
+
+    // This is the test for checking if re-staking works
+    function testProverPool_reStake_and_staked_amount_is_good() external {
+        uint16 baseCapacity = 128;
+
+        uint64 stakeAmount = 5000;
+
+        depositTaikoToken(Alice, tokenPerCapacity * baseCapacity, 1 ether);
+        vm.prank(Alice, Alice);
+        pp.stake(uint64(baseCapacity) * stakeAmount * 1e8, 10, baseCapacity);
+
+        ProverPool.Prover[] memory provers;
+
+        (provers, ) = printProvers();
+        assertEq(
+            provers[0].stakedAmount, uint64(baseCapacity) * stakeAmount * 1e8
+        );
+
+        vm.warp(block.timestamp + 24 hours);
+        // Alice stakes one more time - the exact same amount
+        vm.prank(Alice, Alice);
+        pp.stake(uint64(baseCapacity) * stakeAmount * 1e8, 10, baseCapacity);
+
+        (provers, ) = printProvers();
+        // If you comment out the fix applied in ProoverPool.sol - this check will fail.
+        assertEq(
+            provers[0].stakedAmount, uint64(baseCapacity) * stakeAmount * 2 * 1e8
+        );
     }
 
     // --- helpers ---

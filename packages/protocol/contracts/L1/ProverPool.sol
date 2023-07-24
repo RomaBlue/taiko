@@ -6,6 +6,8 @@
 
 pragma solidity ^0.8.20;
 
+import { Test } from "forge-std/Test.sol";
+import { console2 } from "forge-std/console2.sol";
 import { AddressResolver } from "../common/AddressResolver.sol";
 import { EssentialContract } from "../common/EssentialContract.sol";
 import { IProverPool } from "./IProverPool.sol";
@@ -186,16 +188,18 @@ contract ProverPool is EssentialContract, IProverPool {
         external
         nonReentrant
     {
-        // Withdraw first
-        _withdraw(msg.sender);
-        // Force this prover to fully exit
-        _exit(msg.sender, true);
         // Then stake again
         if (amount != 0) {
             _stake(msg.sender, amount, rewardPerGas, maxCapacity);
-        } else if (rewardPerGas != 0 || maxCapacity != 0) {
-            revert INVALID_PARAMS();
-        }
+        } else{
+            if (rewardPerGas != 0 || maxCapacity != 0) {
+                revert INVALID_PARAMS();
+            }
+            // Withdraw first
+            _withdraw(msg.sender);
+            // Force this prover to fully exit
+            _exit(msg.sender, true);
+        } 
     }
 
     /// @notice Request an exit for the staker. This will withdraw the staked
@@ -315,6 +319,7 @@ contract ProverPool is EssentialContract, IProverPool {
             if (staker.exitAmount >= amount) {
                 staker.exitAmount -= amount;
             } else {
+                //Only burn in case
                 uint64 burnAmount = (amount - staker.exitAmount);
                 TaikoToken(resolve("taiko_token", false)).burn(addr, burnAmount);
                 staker.exitAmount = 0;
@@ -325,37 +330,46 @@ contract ProverPool is EssentialContract, IProverPool {
             staker.exitAmount == 0 ? 0 : uint64(block.timestamp);
 
         staker.maxCapacity = maxCapacity;
-
-        // Find the prover id
-        uint32 proverId = 1;
-        for (uint32 i = 2; i <= MAX_NUM_PROVERS;) {
-            if (provers[proverId].stakedAmount > provers[i].stakedAmount) {
-                proverId = i;
+        if (staker.proverId != 0) {
+            // @dantaik: This one could be an elegant way 
+            provers[staker.proverId].stakedAmount += amount;
+            provers[staker.proverId].rewardPerGas = rewardPerGas;
+            provers[staker.proverId].currentCapacity = maxCapacity;
+        }
+        else{
+            // Find the prover id
+            uint32 proverId = 1;
+            for (uint32 i = 2; i <= MAX_NUM_PROVERS;) {
+                if (provers[proverId].stakedAmount > provers[i].stakedAmount) {
+                    proverId = i;
+                }
+                unchecked {
+                    ++i;
+                }
             }
-            unchecked {
-                ++i;
+
+            if (provers[proverId].stakedAmount >= amount) {
+                revert PROVER_NOT_GOOD_ENOUGH();
             }
-        }
 
-        if (provers[proverId].stakedAmount >= amount) {
-            revert PROVER_NOT_GOOD_ENOUGH();
-        }
+            // Force the replaced prover to exit
+            address replaced = proverIdToAddress[proverId];
+            if (replaced != address(0)) {
+                _withdraw(replaced);
+                _exit(replaced, false);
+            }
+            proverIdToAddress[proverId] = addr;
+            staker.proverId = proverId;
+            // console2.log("staker.proverId");
+            // console2.log(staker.proverId);
 
-        // Force the replaced prover to exit
-        address replaced = proverIdToAddress[proverId];
-        if (replaced != address(0)) {
-            _withdraw(replaced);
-            _exit(replaced, false);
+            // Insert the prover in the top prover list
+            provers[proverId] = Prover({
+                stakedAmount: amount,
+                rewardPerGas: rewardPerGas,
+                currentCapacity: maxCapacity
+            });
         }
-        proverIdToAddress[proverId] = addr;
-        staker.proverId = proverId;
-
-        // Insert the prover in the top prover list
-        provers[proverId] = Prover({
-            stakedAmount: amount,
-            rewardPerGas: rewardPerGas,
-            currentCapacity: maxCapacity
-        });
 
         emit Staked(addr, amount, rewardPerGas, maxCapacity);
     }
@@ -366,6 +380,13 @@ contract ProverPool is EssentialContract, IProverPool {
         if (staker.proverId == 0) return;
 
         Prover memory prover = provers[staker.proverId];
+
+        delete proverIdToAddress[staker.proverId];
+
+        // Delete the prover but make it non-zero for cheaper rewrites
+        // by keep rewardPerGas = 1
+        provers[staker.proverId] = Prover(0, 1, 0);
+
         if (prover.stakedAmount > 0) {
             if (
                 checkExitTimestamp
@@ -378,12 +399,6 @@ contract ProverPool is EssentialContract, IProverPool {
             staker.exitRequestedAt = uint64(block.timestamp);
             staker.proverId = 0;
         }
-
-        // Delete the prover but make it non-zero for cheaper rewrites
-        // by keep rewardPerGas = 1
-        provers[staker.proverId] = Prover(0, 1, 0);
-
-        delete proverIdToAddress[staker.proverId];
 
         emit Exited(addr, staker.exitAmount);
     }
