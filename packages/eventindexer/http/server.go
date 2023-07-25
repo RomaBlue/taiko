@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/patrickmn/go-cache"
 	"github.com/taikoxyz/taiko-mono/packages/eventindexer"
+	"github.com/taikoxyz/taiko-mono/packages/eventindexer/contracts/addressdelegater"
 	"github.com/taikoxyz/taiko-mono/packages/eventindexer/contracts/proverpool"
 
 	echoprom "github.com/labstack/echo-contrib/prometheus"
@@ -19,20 +20,22 @@ import (
 )
 
 type Server struct {
-	echo       *echo.Echo
-	eventRepo  eventindexer.EventRepository
-	statRepo   eventindexer.StatRepository
-	cache      *cache.Cache
-	proverPool *proverpool.ProverPool
+	echo             *echo.Echo
+	eventRepo        eventindexer.EventRepository
+	statRepo         eventindexer.StatRepository
+	cache            *cache.Cache
+	proverPool       *proverpool.ProverPool
+	addressDelegater *addressdelegater.AddressDelegater
 }
 
 type NewServerOpts struct {
-	Echo              *echo.Echo
-	EventRepo         eventindexer.EventRepository
-	StatRepo          eventindexer.StatRepository
-	ProverPoolAddress common.Address
-	EthClient         *ethclient.Client
-	CorsOrigins       []string
+	Echo                    *echo.Echo
+	EventRepo               eventindexer.EventRepository
+	StatRepo                eventindexer.StatRepository
+	ProverPoolAddress       common.Address
+	AddressDelegaterAddress common.Address
+	EthClient               *ethclient.Client
+	CorsOrigins             []string
 }
 
 func (opts NewServerOpts) Validate() error {
@@ -75,12 +78,22 @@ func NewServer(opts NewServerOpts) (*Server, error) {
 		}
 	}
 
+	var addressDelegater *addressdelegater.AddressDelegater
+
+	if opts.AddressDelegaterAddress.Hex() != "" {
+		addressDelegater, err = addressdelegater.NewAddressDelegater(opts.AddressDelegaterAddress, opts.EthClient)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	srv := &Server{
-		echo:       opts.Echo,
-		eventRepo:  opts.EventRepo,
-		statRepo:   opts.StatRepo,
-		cache:      cache,
-		proverPool: proverPool,
+		echo:             opts.Echo,
+		eventRepo:        opts.EventRepo,
+		statRepo:         opts.StatRepo,
+		cache:            cache,
+		proverPool:       proverPool,
+		addressDelegater: addressDelegater,
 	}
 
 	corsOrigins := opts.CorsOrigins
