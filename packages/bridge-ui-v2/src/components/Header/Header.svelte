@@ -6,6 +6,7 @@
   import { LogoWithText } from '$components/Logo';
   import { drawerToggleId } from '$components/SideNavigation';
   import { account } from '$stores/account';
+
   $: isBridgePage = $page.route.id === '/' || $page.route.id === '/nft';
 </script>
 
@@ -26,15 +27,15 @@
  ">
   <LogoWithText class="w-[77px] h-[20px] md:hidden" />
 
-  {#if isBridgePage}
-    <BridgeTabs />
-  {:else}
-    <div />
-  {/if}
+  <div class="flex justify-end md:f-between-center w-full">
+    {#if isBridgePage}
+      <BridgeTabs class="hidden md:flex" />
+    {/if}
 
-  <ConnectButton connected={$account?.isConnected} />
+    <ConnectButton connected={$account?.isConnected} />
+  </div>
 
-  <label for={drawerToggleId} class="md:hidden">
+  <label for={drawerToggleId} class="ml-[10px] md:hidden">
     <Icon type="bars-menu" />
   </label>
 </header>

@@ -5,7 +5,15 @@
   export let text = '';
 
   export let classes = classNames(
-    'card w-full md:bg-elevated-background rounded-[20px] md:border md:border-neutral-background',
+    ` card 
+      w-full 
+      rounded-xl 
+      md:border 
+      md:border-gray-700 
+      md:glassy-gradient-card
+      md:backdrop-blur-sm
+      md:bg-elevated-bg-activities
+    `,
     $$props.class,
   );
 </script>
