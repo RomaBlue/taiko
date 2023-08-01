@@ -33,11 +33,6 @@ contract FailWhenBridgeBackCanonical is ERC20 {
         _mint(to, 50 * (10 ** decimals()));
     }
 
-    /**
-     * transfer() function to fail when Bridge calls it.
-     * @dev This will create failed when bridges tries to
-     * recall it
-     */
     function transfer(
         address,
         uint256
@@ -47,6 +42,6 @@ contract FailWhenBridgeBackCanonical is ERC20 {
         override
         returns (bool)
     {
-        revert("Cannot bridge back to canonical.");
+        revert("Cannot bridge back to canonical (intentional).");
     }
 }
