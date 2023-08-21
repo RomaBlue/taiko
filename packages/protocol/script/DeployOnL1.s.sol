@@ -33,15 +33,15 @@ contract DeployOnL1 is Script {
 
     address public taikoL2Address = vm.envAddress("TAIKO_L2_ADDRESS");
 
-    address public l2SignalService = vm.envAddress("L2_SIGNAL_SERVICE");
+    address public l2SignalService = vm.envAddress("L2_SIGNAL_SERVICE"); // (alex) 用处
 
-    address public owner = vm.envAddress("OWNER");
+    address public owner = vm.envAddress("OWNER"); // (alex) 用处
 
-    address public oracleProver = vm.envAddress("ORACLE_PROVER");
+    address public oracleProver = vm.envAddress("ORACLE_PROVER"); // (alex) 用处
 
-    address public sharedSignalService = vm.envAddress("SHARED_SIGNAL_SERVICE");
+    address public sharedSignalService = vm.envAddress("SHARED_SIGNAL_SERVICE"); // (alex) 用处
 
-    address public treasury = vm.envAddress("TREASURY");
+    address public treasury = vm.envAddress("TREASURY"); // (alex) 用处
 
     address[] public taikoTokenPremintRecipients =
         vm.envAddress("TAIKO_TOKEN_PREMINT_RECIPIENTS", ",");
@@ -79,7 +79,7 @@ contract DeployOnL1 is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // AddressManager
+        // AddressManager  (alex) 之前是为什么要引入 addressManager的？
         AddressManager addressManager = new ProxiedAddressManager();
         addressManagerProxy = deployProxy(
             "address_manager",
@@ -88,7 +88,7 @@ contract DeployOnL1 is Script {
         );
 
         // TaikoL1
-        taikoL1 = new ProxiedTaikoL1();
+        taikoL1 = new ProxiedTaikoL1(); // (alex)  了解是如何代理的
         uint256 l2ChainId = taikoL1.getConfig().chainId;
         require(l2ChainId != block.chainid, "same chainid");
 
