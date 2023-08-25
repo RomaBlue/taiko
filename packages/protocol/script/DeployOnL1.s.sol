@@ -27,7 +27,7 @@ import "../contracts/L1/ProverPool.sol";
 contract DeployOnL1 is Script {
     using SafeCastUpgradeable for uint256;
 
-    bytes32 public genesisHash = vm.envBytes32("L2_GENESIS_HASH");
+    bytes32 public genesisHash = vm.envBytes32("L2_GENESIS_HASH"); 
 
     uint256 public deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
@@ -35,7 +35,7 @@ contract DeployOnL1 is Script {
 
     address public l2SignalService = vm.envAddress("L2_SIGNAL_SERVICE"); // (alex) 用处
 
-    address public owner = vm.envAddress("OWNER"); // (alex) 用处
+    address public owner = vm.envAddress("OWNER");
 
     address public oracleProver = vm.envAddress("ORACLE_PROVER"); // (alex) 用处
 
@@ -79,7 +79,7 @@ contract DeployOnL1 is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // AddressManager  (alex) 之前是为什么要引入 addressManager的？
+        // AddressManager
         AddressManager addressManager = new ProxiedAddressManager();
         addressManagerProxy = deployProxy(
             "address_manager",
@@ -88,7 +88,7 @@ contract DeployOnL1 is Script {
         );
 
         // TaikoL1
-        taikoL1 = new ProxiedTaikoL1(); // (alex)  了解是如何代理的
+        taikoL1 = new ProxiedTaikoL1(); 
         uint256 l2ChainId = taikoL1.getConfig().chainId;
         require(l2ChainId != block.chainid, "same chainid");
 
@@ -122,7 +122,7 @@ contract DeployOnL1 is Script {
             address(stakingProverPool),
             bytes.concat(
                 stakingProverPool.init.selector,
-                abi.encode(addressManagerProxy, 2048)
+                abi.encode(addressManagerProxy, 2048) // (alex) 为什么这里会有个 2048？
             )
         );
 
