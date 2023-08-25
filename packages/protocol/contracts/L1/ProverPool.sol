@@ -22,16 +22,16 @@ contract ProverPool is EssentialContract, IProverPool {
     /// protocol feePerGas).
     struct Prover {
         uint64 stakedAmount;
-        uint32 rewardPerGas;    // (alex)  为什么 reward 是按照 gas 算的？
-        uint32 currentCapacity; // (alex)  capacity 是什么意思？
+        uint32 rewardPerGas;
+        uint32 currentCapacity;
     }
 
     /// @dev Make sure we only use one slot. (alex) 是指每个 Staker只能使用一个 slot 么？为什么？
     struct Staker {
         uint64 exitRequestedAt;
-        uint64 exitAmount; //(alex) 是什么含义？
-        uint32 maxCapacity; // (alex) 是指每秒可以处理的 block 的能力？
-        uint32 proverId; // 0 to indicate the staker is not a top prover  (alex) 什么是 top prover?是质押最多的几个 prover么？
+        uint64 exitAmount;
+        uint32 maxCapacity; 
+        uint32 proverId; // 0 to indicate the staker is not a top prover 
     }
 
     // Given that we only have 32 slots for the top provers, if the protocol
@@ -42,9 +42,9 @@ contract ProverPool is EssentialContract, IProverPool {
     uint64 public constant EXIT_PERIOD = 1 weeks;
     uint64 public constant SLASH_POINTS = 25; // basis points or 0.25%
     uint64 public constant SLASH_MULTIPLIER = 4;
-    uint64 public constant MIN_STAKE_PER_CAPACITY = 10_000; // (alex) 质押多少和声明的 capacity 有关系，这个是会用来计算 top 排序么？
+    uint64 public constant MIN_STAKE_PER_CAPACITY = 10_000;
     uint256 public constant MAX_NUM_PROVERS = 32;
-    uint256 public constant MIN_CHANGE_DELAY = 1 hours; //(alex) 上面这些配置是什么意思？
+    uint256 public constant MIN_CHANGE_DELAY = 1 hours;
 
     // Reserve more slots than necessary
     Prover[1024] public provers;
@@ -310,12 +310,12 @@ contract ProverPool is EssentialContract, IProverPool {
         Staker storage staker = stakers[addr];
 
         unchecked {
-            if (staker.exitAmount >= amount) { // (alex) 这里的逻辑是什么意思？
+            if (staker.exitAmount >= amount) {
                 staker.exitAmount -= amount;
             } else {
                 uint64 burnAmount = (amount - staker.exitAmount);
                 TaikoToken(resolve("taiko_token", false)).burn(addr, burnAmount); // (alex)  这里要不要判断 burnAmount==0 就不 burn 了？
-                staker.exitAmount = 0; // (alex)  为什么要置零？什么情况下 exitAmount < amount && exitAmount !=0
+                staker.exitAmount = 0; 
             }
         }
 
