@@ -313,8 +313,8 @@ contract ProverPool is EssentialContract, IProverPool {
             if (staker.exitAmount >= amount) {
                 staker.exitAmount -= amount;
             } else {
-                uint64 burnAmount = (amount - staker.exitAmount);
-                TaikoToken(resolve("taiko_token", false)).burn(addr, burnAmount); // (alex)  这里要不要判断 burnAmount==0 就不 burn 了？
+                uint64 burnAmount = (amount - staker.exitAmount); 
+                TaikoToken(resolve("taiko_token", false)).burn(addr, burnAmount);
                 staker.exitAmount = 0; 
             }
         }

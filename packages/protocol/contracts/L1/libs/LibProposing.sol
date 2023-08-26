@@ -56,15 +56,16 @@ library LibProposing {
                 revert L1_PERMISSION_DENIED();
             }
         }
-        // Try to select a prover first to revert as earlier as possible
+        // Try to select a prover first to revert as earlier as possible // (alex) 这里 revert 是指什么地方会 revert？
         (address assignedProver, uint32 rewardPerGas) = IProverPool(
             resolver.resolve("prover_pool", false)
         ).assignProver(state.numBlocks, state.feePerGas);
 
-        assert(assignedProver != address(1));
+        assert(assignedProver != address(1)); // (alex) 为什么与 address(1) 判断？
 
         {
             // Validate block input then cache txList info if requested
+            // (alex) 为什么需要 cacheTxlistInfo? 可能是是用于二次 propose，但是为什么会有二次 propose这种用法？
             bool cacheTxListInfo = _validateBlock({
                 state: state,
                 config: config,
@@ -87,7 +88,7 @@ library LibProposing {
 
         unchecked {
             meta.timestamp = uint64(block.timestamp);
-            meta.l1Height = uint64(block.number - 1);
+            meta.l1Height = uint64(block.number - 1); // (alex) 为什么这里记录的是上一个 block 的信息？
             meta.l1Hash = blockhash(block.number - 1);
 
             // After The Merge, L1 mixHash contains the prevrandao
@@ -98,13 +99,13 @@ library LibProposing {
         }
 
         meta.txListHash = input.txListHash;
-        meta.txListByteStart = input.txListByteStart;
+        meta.txListByteStart = input.txListByteStart; // (alex) 这两个字段是干嘛的？
         meta.txListByteEnd = input.txListByteEnd;
         meta.gasLimit = config.blockMaxGasLimit;
         meta.beneficiary = input.beneficiary;
-        meta.treasury = resolver.resolve(config.chainId, "treasury", false);
+        meta.treasury = resolver.resolve(config.chainId, "treasury", false); // (alex) 这个字段是干嘛的？
         meta.depositsProcessed =
-            LibEthDepositing.processDeposits(state, config, input.beneficiary);
+            LibEthDepositing.processDeposits(state, config, input.beneficiary); // (alex) 这个字段是干嘛的？
 
         // Init the block
         TaikoData.Block storage blk =
@@ -113,7 +114,7 @@ library LibProposing {
         blk.metaHash = LibUtils.hashMetadata(meta);
         blk.blockId = state.numBlocks;
         blk.gasLimit = meta.gasLimit;
-        blk.nextForkChoiceId = 1;
+        blk.nextForkChoiceId = 1; // (alex) 为什么不是从 0 开始？因为该字段类型默认是 0？这个字段有什么用？
         blk.verifiedForkChoiceId = 0;
         blk.proverReleased = false;
 
@@ -122,7 +123,7 @@ library LibProposing {
         blk.proposedAt = meta.timestamp;
 
         if (assignedProver == address(0)) {
-            if (state.numOpenBlocks >= config.rewardOpenMaxCount) {
+            if (state.numOpenBlocks >= config.rewardOpenMaxCount) { // open block是指没有指定 prover 的 block？
                 revert L1_TOO_MANY_OPEN_BLOCKS();
             }
             blk.rewardPerGas = state.feePerGas;
