@@ -127,8 +127,8 @@ library TaikoData {
         bytes32 metaHash;
         bytes32 parentHash;
         bytes32 blockHash;
-        bytes32 signalRoot;
-        bytes32 graffiti;
+        bytes32 signalRoot; // (alex) 用处
+        bytes32 graffiti; // (alex) 用处
         address prover;
         uint32 parentGasUsed;
         uint32 gasUsed;
@@ -139,7 +139,7 @@ library TaikoData {
     /// 4 slots.
     struct ForkChoice {
         // Key is only written/read for the 1st fork choice.
-        bytes32 key;
+        bytes32 key; // 这个key 的用处是什么？
         bytes32 blockHash;
         bytes32 signalRoot;
         address prover;

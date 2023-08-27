@@ -103,7 +103,7 @@ library LibProving {
             if (fcId == 1) {
                 // We only write the key when fcId is 1.
                 fc.key = LibUtils.keyForForkChoice(
-                    evidence.parentHash, evidence.parentGasUsed
+                    evidence.parentHash, evidence.parentGasUsed // (alex) 为什么这里要特地写个 key？
                 );
             } else {
                 state.forkChoiceIds[blk.blockId][evidence.parentHash][evidence
