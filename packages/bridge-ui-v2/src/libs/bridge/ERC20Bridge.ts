@@ -43,8 +43,8 @@ export class ERC20Bridge extends Bridge {
     const gasLimit = !isTokenAlreadyDeployed
       ? BigInt(bridgeService.noTokenDeployedGasLimit)
       : fee > 0
-      ? bridgeService.noOwnerGasLimit
-      : BigInt(0);
+        ? bridgeService.noOwnerGasLimit
+        : BigInt(0);
 
     const sendERC20Args: BridgeTransferOp = {
       destChainId: BigInt(destChainId),
@@ -228,7 +228,7 @@ export class ERC20Bridge extends Bridge {
 
     const proof = await this._prover.generateProofToRelease(msgHash, srcChainId, destChainId);
 
-    const bridgeAddress = routingContractsMap[connectedChainId][destChainId].bridgeAddress;
+    const bridgeAddress = routingContractsMap[srcChainId][destChainId].bridgeAddress;
     const bridgeContract = getContract({
       walletClient: wallet,
       abi: bridgeABI,

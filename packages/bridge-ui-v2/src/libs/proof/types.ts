@@ -1,11 +1,17 @@
 import type { Address, Hash, Hex } from 'viem';
 
+export enum ProofAction {
+  CLAIM = 'claim',
+  RELEASE = 'release',
+}
+
 export type GenerateProofArgs = {
+  action: ProofAction;
   msgHash: Hash;
   contractAddress: Address;
   proofForAccountAddress: Address;
-  crossChainSyncChainId: number;
-  clientChainId: number;
+  srcChainId: number;
+  destChainId: number;
 };
 
 export type StorageEntry = {
@@ -35,3 +41,50 @@ export type ClientWithEthGetProofRequest = {
     params: [Address, Hex[], number | Hash | 'latest' | 'earliest'];
   }): Promise<EthGetProofResponse>;
 };
+
+
+
+export type Block = {
+  number: Hex;
+  hash: Hex;
+  parentHash: Hex;
+  nonce: bigint;
+  sha3Uncles: Hex;
+  logsBloom: Hex[] | Hex;
+  transactionsRoot: Hex;
+  stateRoot: Hex;
+  receiptsRoot: Hex;
+  miner: Hex;
+  difficulty: bigint;
+  totalDifficulty: bigint;
+  extraData: Hex;
+  size: bigint;
+  gasLimit: bigint;
+  gasUsed: bigint;
+  timestamp: bigint;
+  transactions: Hex[];
+  uncles: Hex[];
+  baseFeePerGas?: number;
+  mixHash: Hex;
+  withdrawalsRoot?: Hex;
+};
+
+export type BlockHeader = {
+  parentHash: Hex;
+  ommersHash: Hex;
+  proposer: Address;
+  stateRoot: Hex;
+  transactionsRoot: Hex;
+  receiptsRoot: Hex;
+  logsBloom: Hex[];
+  difficulty: bigint;
+  height: Hex;
+  gasLimit: bigint;
+  gasUsed: bigint;
+  timestamp: bigint;
+  extraData: Hex;
+  mixHash: Hex;
+  nonce: Hex | null;
+  baseFeePerGas: number | undefined;
+  withdrawalsRoot: Hex | undefined;
+}

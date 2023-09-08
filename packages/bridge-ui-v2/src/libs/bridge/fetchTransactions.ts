@@ -24,14 +24,14 @@ export async function fetchTransactions(userAddress: Address) {
     return txs;
   });
 
-  let relayerTxsArrays: BridgeTransaction[][]
+  let relayerTxsArrays: BridgeTransaction[][];
   // Wait for all promises to resolve
   try {
     relayerTxsArrays = await Promise.all(relayerTxPromises);
   } catch (e) {
     log('error fetching transactions from relayers', e);
     error = e as Error;
-    relayerTxsArrays = []
+    relayerTxsArrays = [];
   }
 
   // Flatten the arrays into a single array
@@ -46,6 +46,9 @@ export async function fetchTransactions(userAddress: Address) {
       outdatedLocalTransactions.map((tx) => tx.hash),
     );
   }
+
+  // reverse the order of transactions so that the latest transaction is on top
+  mergedTransactions.reverse();
 
   // Sort by status
   const statusOrder: MessageStatus[] = [

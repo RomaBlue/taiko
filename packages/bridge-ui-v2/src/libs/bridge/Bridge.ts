@@ -80,6 +80,7 @@ export abstract class Bridge {
   protected async beforeReleasing({ msgHash, message, wallet }: ClaimArgs) {
     const connectedChainId = await wallet.getChainId();
     const srcChainId = Number(message.srcChainId);
+    const destChainId = Number(message.destChainId);
     // Are we connected to the source chain?
     if (connectedChainId !== srcChainId) {
       throw new WrongChainError('wallet must be connected to the source chain');
@@ -92,8 +93,7 @@ export abstract class Bridge {
       throw new WrongOwnerError('user cannot process this as it is not their message');
     }
 
-    // Before releasing we need to make sure the message has failed
-    const destChainId = Number(message.destChainId);
+
     const destBridgeAddress = routingContractsMap[destChainId][srcChainId].bridgeAddress;
 
     const destBridgeContract = getContract({
@@ -106,6 +106,7 @@ export abstract class Bridge {
 
     log(`Releasing message with status ${messageStatus}`);
 
+    // Before releasing we need to make sure the message has failed
     if (messageStatus !== MessageStatus.FAILED) {
       throw new MessageStatusError('message must fail to release funds');
     }
