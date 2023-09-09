@@ -7,7 +7,7 @@ import { PendingBlockError } from '$libs/error';
 import { getLogger } from '$libs/util/logger';
 import { publicClient } from '$libs/wagmi';
 
-import { type Block, type ClientWithEthGetProofRequest, type GenerateProofArgs, ProofAction } from './types';
+import type { Block, ClientWithEthGetProofRequest, GenerateProofArgs } from './types';
 
 const log = getLogger('proof:Prover');
 
@@ -16,48 +16,68 @@ export class Prover {
     return keccak256(encodePacked(['address', 'bytes32'], [contractAddress, msgHash]));
   }
 
-  protected async _getKeyToRelease(msgHash: Hex) {
+  protected async _getKeyToRecall(msgHash: Hex) {
     return keccak256(encodePacked(['bytes', 'bytes32'], [toHex('MESSAGE_STATUS'), msgHash]));
   }
 
   protected async _getLatestBlock(
     client: PublicClient,
     crossChainSyncContract: GetContractResult<typeof crossChainSyncABI>,
-  ) {
+  ): Promise<Block> {
     const latestBlockHash = await crossChainSyncContract.read.getCrossChainBlockHash([BigInt(0)]);
 
-    const block: Block = await client.request({
+    return await client.request({
       method: 'eth_getBlockByHash',
       params: [
-        latestBlockHash, false
+        latestBlockHash,
+        true
       ],
     });
-    return block;
   }
 
-  async generateProof(args: GenerateProofArgs) {
-    const { action, msgHash, srcChainId, contractAddress, destChainId, proofForAccountAddress } = args;
 
-    let key: Hex = toHex(0);
-    let client;
 
-    if (action === ProofAction.CLAIM) {
-      client = publicClient({ chainId: srcChainId });
-      key = await this._getKeyToClaim(contractAddress, msgHash);
-    } else if (action === ProofAction.RELEASE) {
-      client = publicClient({ chainId: destChainId });
-      key = await this._getKeyToRelease(msgHash);
-    }
+  async generateRecallProof(args: GenerateProofArgs) {
+    const { msgHash, srcChainId, destChainId, proofForAccountAddress } = args;
+    const key = await this._getKeyToRecall(msgHash);
+    log('key to recall', key)
 
-    if (!client) {
-      throw new Error('client is not defined');
-    }
+    const srcClient = publicClient({ chainId: srcChainId });
+    const destClient = publicClient({ chainId: destChainId });
+    const crossChainSyncAddress = routingContractsMap[destChainId][srcChainId].crossChainSyncAddress;
 
-    // Unfortunately, since this method is stagnant, it hasn't been included into Viem lib
-    // as supported methods. Still stupported  by Alchmey, Infura and others.
-    // See https://eips.ethereum.org/EIPS/eip-1186
-    // Following is a workaround to support this method.
-    const clientWithEthProofRequest = client as ClientWithEthGetProofRequest;
+    const crossChainSyncContract = getContract({
+      chainId: destChainId,
+      address: crossChainSyncAddress,
+      abi: crossChainSyncABI,
+    });
+
+    const block = await this._getLatestBlock(srcClient, crossChainSyncContract);
+    log('retrieved block', block);
+
+    const clientWithEthProofRequest = destClient as ClientWithEthGetProofRequest;
+
+    if (!block) throw new Error("could not fetch block")
+
+    if (!block || !block.hash) { throw new Error('block  is null') }
+    const proof = await clientWithEthProofRequest.request({
+      method: 'eth_getProof',
+      params: [
+        // Address of the account to get the proof for
+        proofForAccountAddress,
+
+        // Array of storage-keys that should be proofed and included
+        [key],
+
+        "latest"
+      ],
+    });
+    return { proof, block }
+  }
+
+
+  async generateClaimProof(args: GenerateProofArgs) {
+    const { msgHash, srcChainId, contractAddress, destChainId, proofForAccountAddress } = args;
 
     const crossChainSyncAddress = routingContractsMap[destChainId][srcChainId].crossChainSyncAddress;
 
@@ -69,13 +89,23 @@ export class Prover {
       abi: crossChainSyncABI,
     });
 
-    const client2 = publicClient({ chainId: srcChainId });
-    const block = await this._getLatestBlock(client2, crossChainSyncContract);
+    const client = publicClient({ chainId: srcChainId });
+    const block = await this._getLatestBlock(client, crossChainSyncContract);
+
+    if (!block) throw new Error("could not fetch block")
 
     if (block.hash === null || block.number === null) {
       throw new PendingBlockError('block is pending');
     }
-    // const block = null;
+
+    const key = await this._getKeyToClaim(contractAddress, msgHash);
+
+    // Unfortunately, since this method is stagnant, it hasn't been included into Viem lib
+    // as supported methods. Still stupported  by Alchmey, Infura and others.
+    // See https://eips.ethereum.org/EIPS/eip-1186
+    // Following is a workaround to support this method.
+    const clientWithEthProofRequest = client as ClientWithEthGetProofRequest;
+
     // RPC call to get the merkle proof what value is at key on the SignalService contract
     const proof = await clientWithEthProofRequest.request({
       method: 'eth_getProof',
@@ -86,7 +116,7 @@ export class Prover {
         // Array of storage-keys that should be proofed and included
         [key],
 
-        block.hash
+        block.hash,
       ],
     });
 

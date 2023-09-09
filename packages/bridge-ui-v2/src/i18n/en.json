@@ -140,12 +140,12 @@
       "claim": {
         "tx": "Transaction sent to claim {token} tokens. Click <a href=\"{url}\" target=\"_blank\"><b>here</b></a> to see it in the explorer.",
         "success": "Transaction completed! Your funds have been successfully claimed on {network}.",
-        "rejected": "Request to claim rejected."
+        "rejected": "Request to claim rejected by user."
       },
       "release": {
         "tx": "Transaction sent to release {token} tokens. Click <a href=\"{url}\" target=\"_blank\"><b>here</b></a> to see it in the explorer.",
         "success": "Transaction completed!. Your funds have been released on {network}",
-        "rejected": "Request to release rejected."
+        "rejected": "Request to release rejected by user."
       }
     },
     "errors": {

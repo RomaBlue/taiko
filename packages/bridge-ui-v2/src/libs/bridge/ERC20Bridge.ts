@@ -9,7 +9,7 @@ import {
   InsufficientAllowanceError,
   NoAllowanceRequiredError,
   ProcessMessageError,
-  ReleaseError,
+  RecallError,
   SendERC20Error,
 } from '$libs/error';
 import type { BridgeProver } from '$libs/proof';
@@ -22,7 +22,7 @@ import {
   type ClaimArgs,
   type ERC20BridgeArgs,
   MessageStatus,
-  type ReleaseArgs,
+  type RecallArgs,
   type RequireAllowanceArgs,
 } from './types';
 
@@ -218,15 +218,14 @@ export class ERC20Bridge extends Bridge {
     return txHash;
   }
 
-  async release(args: ReleaseArgs) {
-    await super.beforeReleasing(args);
+  async recall(args: RecallArgs) {
+    await super.beforeRecalling(args);
 
     const { msgHash, message, wallet } = args;
     const srcChainId = Number(message.srcChainId);
     const destChainId = Number(message.destChainId);
-    const connectedChainId = await wallet.getChainId();
 
-    const proof = await this._prover.generateProofToRelease(msgHash, srcChainId, destChainId);
+    const proof = await this._prover.generateProofToRecallMessage(msgHash, srcChainId, destChainId);
 
     const bridgeAddress = routingContractsMap[srcChainId][destChainId].bridgeAddress;
     const bridgeContract = getContract({
@@ -236,6 +235,8 @@ export class ERC20Bridge extends Bridge {
     });
 
     try {
+      log('Calling recallMessage with message and proof', message, proof
+      )
       const txHash = await bridgeContract.write.recallMessage([message, proof]);
 
       log('Transaction hash for releaseERC20 call', txHash);
@@ -248,7 +249,7 @@ export class ERC20Bridge extends Bridge {
         throw new UserRejectedRequestError(err as Error);
       }
 
-      throw new ReleaseError('failed to release ERC20', { cause: err });
+      throw new RecallError('failed to recall ERC20', { cause: err });
     }
   }
 }

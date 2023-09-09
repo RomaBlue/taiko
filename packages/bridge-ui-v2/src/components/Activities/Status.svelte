@@ -22,7 +22,7 @@
     InvalidProofError,
     NotConnectedError,
     ProcessMessageError,
-    ReleaseError,
+    RecallError,
     RetryError,
   } from '$libs/error';
   import { getConnectedWallet } from '$libs/util/getConnectedWallet';
@@ -155,7 +155,7 @@
     }
   }
 
-  async function release() {
+  async function recall() {
     if (!$network || !$account?.address) return;
 
     loading = 'releasing';
@@ -177,10 +177,10 @@
       // TODO: might not be needed to pass the chainId here
       const wallet = await getConnectedWallet(Number(bridgeTx.srcChainId));
 
-      log(`Releasing ${bridgeTx.tokenType} for transaction`, bridgeTx);
+      log(`Recalling ${bridgeTx.tokenType} for transaction`, bridgeTx);
 
-      // Step 4: Call release() method on the bridge
-      const txHash = await bridge.release({ msgHash, message, wallet });
+      // Step 4: Call recall() method on the bridge
+      const txHash = await bridge.recall({ msgHash, message, wallet });
 
       const { explorer } = chainConfig[Number(bridgeTx.srcChainId)].urls;
 
@@ -210,13 +210,13 @@
           warningToast($t('messages.account.required'));
           break;
         case err instanceof UserRejectedRequestError:
-          warningToast($t('activities.actions.release_rejected'));
+          warningToast($t('activities.actions.release.rejected'));
           break;
         case err instanceof InvalidProofError:
           errorToast($t('TODO: InvalidProofError'));
           break;
-        case err instanceof ReleaseError:
-          errorToast($t('TODO: ReleaseError'));
+        case err instanceof RecallError:
+          errorToast($t('TODO: RecallError'));
           break;
         default:
           errorToast($t('TODO: UnknownError'));
@@ -279,7 +279,7 @@
     <StatusDot type="success" />
     <span>{$t('activities.status.claimed.name')}</span>
   {:else if bridgeTxStatus === MessageStatus.FAILED}
-    <button class="status-btn" on:click={release}>
+    <button class="status-btn" on:click={recall}>
       {$t('activities.button.release')}
     </button>
   {:else}

@@ -127,7 +127,7 @@ export type ClaimArgs = {
   wallet: WalletClient;
 };
 
-export type ReleaseArgs = ClaimArgs;
+export type RecallArgs = ClaimArgs;
 export interface Bridge {
   estimateGas(args: BridgeArgs): Promise<bigint>;
   bridge(args: BridgeArgs): Promise<Hex>;

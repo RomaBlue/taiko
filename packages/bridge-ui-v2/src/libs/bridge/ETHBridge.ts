@@ -4,12 +4,12 @@ import { UserRejectedRequestError } from 'viem';
 import { bridgeABI } from '$abi';
 import { routingContractsMap } from '$bridgeConfig';
 import { bridgeService } from '$config';
-import { ProcessMessageError, ReleaseError, SendMessageError } from '$libs/error';
+import { ProcessMessageError, RecallError, SendMessageError } from '$libs/error';
 import type { BridgeProver } from '$libs/proof';
 import { getLogger } from '$libs/util/logger';
 
 import { Bridge } from './Bridge';
-import { type ClaimArgs, type ETHBridgeArgs, type Message, MessageStatus, type ReleaseArgs } from './types';
+import { type ClaimArgs, type ETHBridgeArgs, type Message, MessageStatus, type RecallArgs } from './types';
 
 const log = getLogger('bridge:ETHBridge');
 
@@ -137,17 +137,18 @@ export class ETHBridge extends Bridge {
     return txHash;
   }
 
-  async release(args: ReleaseArgs) {
-    await super.beforeReleasing(args);
+  async recall(args: RecallArgs) {
+    await super.beforeRecalling(args);
 
     const { msgHash, message, wallet } = args;
     const srcChainId = Number(message.srcChainId);
     const destChainId = Number(message.destChainId);
     const connectedChainId = await wallet.getChainId();
 
-    const proof = await this._prover.generateProofToRelease(msgHash, srcChainId, destChainId);
+    const proof = await this._prover.generateProofToRecallMessage(msgHash, srcChainId, destChainId);
 
     const srcBridgeAddress = routingContractsMap[connectedChainId][destChainId].bridgeAddress;
+
     const srcBridgeContract = getContract({
       walletClient: wallet,
       abi: bridgeABI,
@@ -167,7 +168,7 @@ export class ETHBridge extends Bridge {
         throw new UserRejectedRequestError(err as Error);
       }
 
-      throw new ReleaseError('failed to release ETH', { cause: err });
+      throw new RecallError('failed to release ETH', { cause: err });
     }
   }
 }

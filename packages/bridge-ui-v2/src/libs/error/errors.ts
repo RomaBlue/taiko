@@ -78,6 +78,6 @@ export class RetryError extends Error {
   name = 'RetryError';
 }
 
-export class ReleaseError extends Error {
-  name = 'ReleaseError';
+export class RecallError extends Error {
+  name = 'RecallError';
 }

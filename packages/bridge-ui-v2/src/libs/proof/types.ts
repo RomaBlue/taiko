@@ -1,12 +1,7 @@
 import type { Address, Hash, Hex } from 'viem';
 
-export enum ProofAction {
-  CLAIM = 'claim',
-  RELEASE = 'release',
-}
 
 export type GenerateProofArgs = {
-  action: ProofAction;
   msgHash: Hash;
   contractAddress: Address;
   proofForAccountAddress: Address;
@@ -85,6 +80,6 @@ export type BlockHeader = {
   extraData: Hex;
   mixHash: Hex;
   nonce: Hex | null;
-  baseFeePerGas: number | undefined;
-  withdrawalsRoot: Hex | undefined;
+  baseFeePerGas: number | 0;
+  withdrawalsRoot: Hex;
 }

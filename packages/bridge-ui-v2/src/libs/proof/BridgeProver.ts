@@ -1,11 +1,12 @@
-import { encodeAbiParameters, encodePacked, type Hash, type Hex, toHex, toRlp } from 'viem';
+import { concat, encodeAbiParameters, type Hash, type Hex, toHex, toRlp } from 'viem';
 
 import { routingContractsMap } from '$bridgeConfig';
 import { MessageStatus } from '$libs/bridge';
 import { InvalidProofError } from '$libs/error';
+import { generateZeroHex } from '$libs/util/generateZeroHex';
 
 import { Prover } from './Prover';
-import { type Block, type BlockHeader, type EthGetProofResponse, ProofAction } from './types';
+import type { Block, BlockHeader, EthGetProofResponse } from './types';
 
 export class BridgeProver extends Prover {
   constructor() {
@@ -43,32 +44,42 @@ export class BridgeProver extends Prover {
     const encodedAccountProof = toRlp(proof.accountProof[0]);
     const encodedStorageProof = toRlp(proof.storageProof[0].proof);
 
-    // RLP encode the proof together for LibTrieProof to decode
-    // const encodedProof = ethers.utils.defaultAbiCoder.encode(
-    //   ['bytes', 'bytes'],
-    //   [RLP.encode(proof.accountProof), RLP.encode(proof.storageProof[0].proof)],
-    // );
+    const params = [
+      {
+        name: 'header',
+        type: 'tuple',
+        components: [
+          { name: 'parentHash', type: 'bytes32' },
+          { name: 'ommersHash', type: 'bytes32' },
+          { name: 'proposer', type: 'address' },
+          { name: 'stateRoot', type: 'bytes32' },
+          { name: 'transactionsRoot', type: 'bytes32' },
+          { name: 'receiptsRoot', type: 'bytes32' },
+          { name: 'logsBloom', type: 'bytes32[8]' },
+          { name: 'difficulty', type: 'uint256' },
+          { name: 'height', type: 'uint128' },
+          { name: 'gasLimit', type: 'uint64' },
+          { name: 'gasUsed', type: 'uint64' },
+          { name: 'timestamp', type: 'uint64' },
+          { name: 'extraData', type: 'bytes' },
+          { name: 'mixHash', type: 'bytes32' },
+          { name: 'nonce', type: 'uint64' },
+          { name: 'baseFeePerGas', type: 'uint256' },
+          { name: 'withdrawalsRoot', type: 'bytes32' }
+        ]
+      },
+      {
+        name: 'proof',
+        type: 'bytes'
+      }
+    ];
 
-    // encode the SignalProof struct from LibBridgeSignal
-    // const signalProof = ethers.utils.defaultAbiCoder.encode(
-    //   [
-    //     'tuple(tuple(bytes32 parentHash, bytes32 ommersHash, address beneficiary, bytes32 stateRoot, bytes32 transactionsRoot, bytes32 receiptsRoot, bytes32[8] logsBloom, uint256 difficulty, uint128 height, uint64 gasLimit, uint64 gasUsed, uint64 timestamp, bytes extraData, bytes32 mixHash, uint64 nonce, uint256 baseFeePerGas, bytes32 withdrawalsRoot) header, bytes proof)',
-    //   ],
-    //   [{ header: blockHeader, proof: encodedProof }],
-    // );
+    const values = [
+      blockHeader,
+      concat([encodedAccountProof, encodedStorageProof])
+    ];
 
-    const encodedProof = encodePacked(
-      ['bytes', 'bytes'],
-      [encodedAccountProof, encodedStorageProof],
-    );
-
-    const signalProof = encodePacked(
-      [
-        'tuple(tuple(bytes32 parentHash, bytes32 ommersHash, address beneficiary, bytes32 stateRoot, bytes32 transactionsRoot, bytes32 receiptsRoot, bytes32[8] logsBloom, uint256 difficulty, uint128 height, uint64 gasLimit, uint64 gasUsed, uint64 timestamp, bytes extraData, bytes32 mixHash, uint64 nonce, uint256 baseFeePerGas, bytes32 withdrawalsRoot) header, bytes proof)',
-      ],
-      [{ header: blockHeader, proof: encodedProof }],
-    );
-
+    const signalProof = encodeAbiParameters(params, values);
     return signalProof;
   }
 
@@ -76,8 +87,7 @@ export class BridgeProver extends Prover {
     const srcBridgeAddress = routingContractsMap[srcChainId][destChainId].bridgeAddress;
     const srcSignalServiceAddress = routingContractsMap[srcChainId][destChainId].signalServiceAddress;
 
-    const { proof, block } = await this.generateProof({
-      action: ProofAction.CLAIM,
+    const { proof, block } = await this.generateClaimProof({
       msgHash,
       srcChainId,
       contractAddress: srcBridgeAddress,
@@ -95,12 +105,11 @@ export class BridgeProver extends Prover {
 
 
 
-  async generateProofToRelease(msgHash: Hash, srcChainId: number, destChainId: number) {
+  async generateProofToRecallMessage(msgHash: Hash, srcChainId: number, destChainId: number) {
     // const srcBridgeAddress = routingContractsMap[srcChainId][destChainId].bridgeAddress;
     const destBridgeAddress = routingContractsMap[destChainId][srcChainId].bridgeAddress;
 
-    const { proof, block } = await this.generateProof({
-      action: ProofAction.RELEASE,
+    const { proof, block } = await this.generateRecallProof({
       msgHash,
       srcChainId,
       contractAddress: destBridgeAddress,
@@ -140,10 +149,6 @@ const buildBlockHeaderFromBlock = (block: Block): BlockHeader => {
     withdrawalsRoot
   } = block;
 
-  // const logsBloominput: `0x${string}` | `0x${string}`[] = logsBloom;
-
-  // const logsBloomString = logsBloominput.toString().substring(2);
-  // const logsBloomArray = logsBloomString.match(/.{1,64}/g)!.map((s: string) => '0x' + s) as Hex[];
 
   let logsBloomArray: Hex[];
 
@@ -170,24 +175,7 @@ const buildBlockHeaderFromBlock = (block: Block): BlockHeader => {
     extraData,
     mixHash,
     nonce: toHex(0),
-    baseFeePerGas,
-    withdrawalsRoot
+    baseFeePerGas: baseFeePerGas ? baseFeePerGas : 0,
+    withdrawalsRoot: withdrawalsRoot ? withdrawalsRoot : generateZeroHex(32)
   };
 };
-
-
-//   struct BlockHeader {
-//     bytes32 transactionsRoot;
-//     bytes32 receiptsRoot;
-//     bytes32[8] logsBloom;
-//     uint256 difficulty;
-//     uint128 height;
-//     uint64 gasLimit;
-//     uint64 gasUsed;
-//     uint64 timestamp;
-//     bytes extraData;
-//     bytes32 mixHash;
-//     uint64 nonce;
-//     uint256 baseFeePerGas;
-//     bytes32 withdrawalsRoot;
-// }

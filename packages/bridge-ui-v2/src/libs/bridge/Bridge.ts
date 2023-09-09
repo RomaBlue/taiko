@@ -7,7 +7,7 @@ import { MessageStatusError, RetryError, WrongChainError, WrongOwnerError } from
 import type { BridgeProver } from '$libs/proof';
 import { getLogger } from '$libs/util/logger';
 
-import { type BridgeArgs, type ClaimArgs, type Message, MessageStatus, type ReleaseArgs } from './types';
+import { type BridgeArgs, type ClaimArgs, type Message, MessageStatus, type RecallArgs } from './types';
 
 const log = getLogger('bridge:Bridge');
 
@@ -77,7 +77,7 @@ export abstract class Bridge {
    * 2. Check that the message is owned by the user
    * 3. Check that the message has failed
    */
-  protected async beforeReleasing({ msgHash, message, wallet }: ClaimArgs) {
+  protected async beforeRecalling({ msgHash, message, wallet }: ClaimArgs) {
     const connectedChainId = await wallet.getChainId();
     const srcChainId = Number(message.srcChainId);
     const destChainId = Number(message.destChainId);
@@ -104,7 +104,7 @@ export abstract class Bridge {
 
     const messageStatus: MessageStatus = await destBridgeContract.read.getMessageStatus([msgHash]);
 
-    log(`Releasing message with status ${messageStatus}`);
+    log(`Recalling message with status ${messageStatus}`);
 
     // Before releasing we need to make sure the message has failed
     if (messageStatus !== MessageStatus.FAILED) {
@@ -115,7 +115,7 @@ export abstract class Bridge {
   abstract estimateGas(args: BridgeArgs): Promise<bigint>;
   abstract bridge(args: BridgeArgs): Promise<Hash>;
   abstract claim(args: ClaimArgs): Promise<Hash>;
-  abstract release(args: ReleaseArgs): Promise<Hash>;
+  abstract recall(args: RecallArgs): Promise<Hash>;
 
   protected async retryClaim(message: Message, bridgeContract: GetContractResult<typeof bridgeABI, WalletClient>) {
     log('Retrying message', message);
