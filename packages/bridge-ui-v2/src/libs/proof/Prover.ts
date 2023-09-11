@@ -42,17 +42,16 @@ export class Prover {
     const key = await this._getKeyToRecall(msgHash);
     log('key to recall', key)
 
-    const srcClient = publicClient({ chainId: srcChainId });
     const destClient = publicClient({ chainId: destChainId });
-    const crossChainSyncAddress = routingContractsMap[destChainId][srcChainId].crossChainSyncAddress;
+    const crossChainSyncAddress = routingContractsMap[srcChainId][destChainId].crossChainSyncAddress;
 
     const crossChainSyncContract = getContract({
-      chainId: destChainId,
+      chainId: srcChainId,
       address: crossChainSyncAddress,
       abi: crossChainSyncABI,
     });
 
-    const block = await this._getLatestBlock(srcClient, crossChainSyncContract);
+    const block = await this._getLatestBlock(destClient, crossChainSyncContract);
     log('retrieved block', block);
 
     const clientWithEthProofRequest = destClient as ClientWithEthGetProofRequest;
@@ -69,7 +68,7 @@ export class Prover {
         // Array of storage-keys that should be proofed and included
         [key],
 
-        "latest"
+        "latest" //todo: why does it not work with block.hash?
       ],
     });
     return { proof, block }

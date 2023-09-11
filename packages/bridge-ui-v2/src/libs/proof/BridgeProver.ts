@@ -1,4 +1,4 @@
-import { concat, encodeAbiParameters, type Hash, type Hex, toHex, toRlp } from 'viem';
+import { encodeAbiParameters, type Hash, type Hex, toHex, toRlp } from 'viem';
 
 import { routingContractsMap } from '$bridgeConfig';
 import { MessageStatus } from '$libs/bridge';
@@ -39,10 +39,29 @@ export class BridgeProver extends Prover {
     return signalProof;
   }
 
-  private _getSignalProofForRelease(proof: EthGetProofResponse, blockHeader: BlockHeader) {
+  private _encodeProofs(proof: EthGetProofResponse): Hex {
     // RLP encode the proof together for LibTrieProof to decode
     const encodedAccountProof = toRlp(proof.accountProof[0]);
     const encodedStorageProof = toRlp(proof.storageProof[0].proof);
+
+    const params = [
+      {
+        name: 'encodedAccountProof',
+        type: 'bytes'
+      },
+      {
+        name: 'encodedStorageProof',
+        type: 'bytes'
+      }
+    ];
+
+    const encoded = encodeAbiParameters(params, [encodedAccountProof, encodedStorageProof]);
+    return encoded;
+  }
+
+  private _getSignalProofForRelease(proof: EthGetProofResponse, blockHeader: BlockHeader): Hex {
+
+    const encodedProofs = this._encodeProofs(proof);
 
     const params = [
       {
@@ -76,7 +95,7 @@ export class BridgeProver extends Prover {
 
     const values = [
       blockHeader,
-      concat([encodedAccountProof, encodedStorageProof])
+      encodedProofs
     ];
 
     const signalProof = encodeAbiParameters(params, values);
@@ -146,6 +165,7 @@ const buildBlockHeaderFromBlock = (block: Block): BlockHeader => {
     extraData,
     mixHash,
     baseFeePerGas,
+    nonce,
     withdrawalsRoot
   } = block;
 
@@ -174,7 +194,7 @@ const buildBlockHeaderFromBlock = (block: Block): BlockHeader => {
     timestamp,
     extraData,
     mixHash,
-    nonce: toHex(0),
+    nonce,
     baseFeePerGas: baseFeePerGas ? baseFeePerGas : 0,
     withdrawalsRoot: withdrawalsRoot ? withdrawalsRoot : generateZeroHex(32)
   };

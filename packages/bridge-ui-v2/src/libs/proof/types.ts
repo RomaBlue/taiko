@@ -79,7 +79,7 @@ export type BlockHeader = {
   timestamp: bigint;
   extraData: Hex;
   mixHash: Hex;
-  nonce: Hex | null;
+  nonce: bigint | null;
   baseFeePerGas: number | 0;
   withdrawalsRoot: Hex;
 }

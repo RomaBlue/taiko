@@ -227,17 +227,17 @@ export class ERC20Bridge extends Bridge {
 
     const proof = await this._prover.generateProofToRecallMessage(msgHash, srcChainId, destChainId);
 
-    const bridgeAddress = routingContractsMap[srcChainId][destChainId].bridgeAddress;
-    const bridgeContract = getContract({
+    const srcBridgeAddress = routingContractsMap[srcChainId][destChainId].bridgeAddress;
+    const srcBridgeContract = getContract({
       walletClient: wallet,
       abi: bridgeABI,
-      address: bridgeAddress,
+      address: srcBridgeAddress,
     });
 
     try {
       log('Calling recallMessage with message and proof', message, proof
       )
-      const txHash = await bridgeContract.write.recallMessage([message, proof]);
+      const txHash = await srcBridgeContract.write.recallMessage([message, proof]);
 
       log('Transaction hash for releaseERC20 call', txHash);
 
