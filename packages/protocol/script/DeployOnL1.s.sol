@@ -23,7 +23,7 @@ import "../contracts/test/erc20/FreeMintERC20.sol";
 import "../contracts/test/erc20/MayFailFreeMintERC20.sol";
 
 contract DeployOnL1 is Script {
-    bytes32 public genesisHash = vm.envBytes32("L2_GENESIS_HASH");
+    // bytes32 public genesisHash = vm.envBytes32("L2_GENESIS_HASH");
 
     uint256 public deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
