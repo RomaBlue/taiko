@@ -27,15 +27,16 @@ contract DeployOnL1 is Script {
 
     uint256 public deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-    address public taikoL2Address = vm.envAddress("TAIKO_L2_ADDRESS");
+    // address public taikoL2Address = vm.envAddress("TAIKO_L2_ADDRESS");
 
-    address public l2SignalService = vm.envAddress("L2_SIGNAL_SERVICE");
+    // address public l2SignalService = vm.envAddress("L2_SIGNAL_SERVICE");
 
-    address public owner = vm.envAddress("OWNER");
+    // address public owner = vm.envAddress("OWNER");
 
-    address public oracleProver = vm.envAddress("ORACLE_PROVER");
+    // address public oracleProver = vm.envAddress("ORACLE_PROVER");
 
-    address public sharedSignalService = vm.envAddress("SHARED_SIGNAL_SERVICE");
+    // address public sharedSignalService =
+    // vm.envAddress("SHARED_SIGNAL_SERVICE");
 
     // address[] public taikoTokenPremintRecipients =
     //     vm.envAddress("TAIKO_TOKEN_PREMINT_RECIPIENTS", ",");
