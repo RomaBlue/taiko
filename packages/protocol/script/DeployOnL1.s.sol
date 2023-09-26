@@ -25,9 +25,9 @@ import "../contracts/test/erc20/MayFailFreeMintERC20.sol";
 contract DeployOnL1 is Script {
     // bytes32 public genesisHash = vm.envBytes32("L2_GENESIS_HASH");
 
-    uint256 public deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+    // uint256 public deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-    // address public taikoL2Address = vm.envAddress("TAIKO_L2_ADDRESS");
+    address public taikoL2Address = vm.envAddress("TAIKO_L2_ADDRESS");
 
     // address public l2SignalService = vm.envAddress("L2_SIGNAL_SERVICE");
 
