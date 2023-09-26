@@ -37,11 +37,11 @@ contract DeployOnL1 is Script {
 
     address public sharedSignalService = vm.envAddress("SHARED_SIGNAL_SERVICE");
 
-    // address[] public taikoTokenPremintRecipients =
-    //     vm.envAddress("TAIKO_TOKEN_PREMINT_RECIPIENTS", ",");
+    address[] public taikoTokenPremintRecipients =
+        vm.envAddress("TAIKO_TOKEN_PREMINT_RECIPIENTS", ",");
 
-    // uint256[] public taikoTokenPremintAmounts =
-    //     vm.envUint("TAIKO_TOKEN_PREMINT_AMOUNTS", ",");
+    uint256[] public taikoTokenPremintAmounts =
+        vm.envUint("TAIKO_TOKEN_PREMINT_AMOUNTS", ",");
 
     TaikoL1 taikoL1;
     address public addressManagerProxy;
@@ -49,20 +49,24 @@ contract DeployOnL1 is Script {
     error FAILED_TO_DEPLOY_PLONK_VERIFIER(string contractPath);
 
     function run() external {
+        console.log("111");
         require(owner != address(0), "owner is zero");
         require(taikoL2Address != address(0), "taikoL2Address is zero");
         require(l2SignalService != address(0), "l2SignalService is zero");
-        // require(
-        //     taikoTokenPremintRecipients.length != 0,
-        //     "taikoTokenPremintRecipients length is zero"
-        // );
 
-        // require(
-        //     taikoTokenPremintRecipients.length
-        //         == taikoTokenPremintAmounts.length,
-        //     "taikoTokenPremintRecipients and taikoTokenPremintAmounts must be
-        // same length"
-        // );
+        console.log("333");
+
+        require(
+            taikoTokenPremintRecipients.length != 0,
+            "taikoTokenPremintRecipients length is zero"
+        );
+
+        require(
+            taikoTokenPremintRecipients.length
+                == taikoTokenPremintAmounts.length,
+            "taikoTokenPremintRecipients and taikoTokenPremintAmounts must be same length"
+        );
+        console.log("222");
 
         vm.startBroadcast(deployerPrivateKey);
 
