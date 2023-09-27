@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
-  import { TransactionExecutionError, UserRejectedRequestError } from 'viem';
+  import { type Address, TransactionExecutionError, UserRejectedRequestError } from 'viem';
 
   import { routingContractsMap } from '$bridgeConfig';
   import { chainConfig } from '$chainConfig';
@@ -40,7 +41,9 @@
   import { pendingTransactions } from '$stores/pendingTransactions';
 
   import Actions from './Actions.svelte';
+  import AddressInput from './AddressInput.svelte';
   import Amount from './Amount.svelte';
+  import IdInput from './IDInput.svelte';
   import { ProcessingFee } from './ProcessingFee';
   import Recipient from './Recipient.svelte';
   import {
@@ -54,7 +57,6 @@
   } from './state';
   import { BridgeTypes, NFTSteps } from './types';
 
-  let activeStep: NFTSteps = NFTSteps.IMPORT;
   let amountComponent: Amount;
   let recipientComponent: Recipient;
   let processingFeeComponent: ProcessingFee;
@@ -270,13 +272,8 @@
 
       bridgeTxService.addTxByAddress($account.address, bridgeTx);
 
-      // Reset the form (we check if these are still mounted, as the user might have left the page)
-      if (amountComponent) amountComponent.clearAmount();
-      if (recipientComponent) recipientComponent.clearRecipient();
-      if (processingFeeComponent) processingFeeComponent.resetProcessingFee();
-
-      // Update balance after bridging
-      if (amountComponent) amountComponent.updateBalance();
+      // Reset the form
+      resetForm();
 
       // Refresh user's balance
       refreshUserBalance();
@@ -309,11 +306,42 @@
     }
   }
 
+  $: if ($selectedToken && amountComponent) {
+    amountComponent.validateAmount();
+  }
+
+  const resetForm = () => {
+    //we check if these are still mounted, as the user might have left the page
+    if (amountComponent) amountComponent.clearAmount();
+    if (recipientComponent) recipientComponent.clearRecipient();
+    if (processingFeeComponent) processingFeeComponent.resetProcessingFee();
+    if (addressInputComponent) addressInputComponent.clear();
+
+    // Update balance after bridging
+    if (amountComponent) amountComponent.updateBalance();
+  };
+
+  // NFT Bridge logic
+  let activeStep: NFTSteps = NFTSteps.IMPORT;
+
   const nextStep = () => (activeStep = Math.min(activeStep + 1, NFTSteps.CONFIRM));
-  const back = () => (activeStep = Math.max(activeStep - 1, NFTSteps.IMPORT));
+  const previousStep = () => (activeStep = Math.max(activeStep - 1, NFTSteps.IMPORT));
 
   let nftStepTitle: string;
   let nftStepDescription: string;
+  let nftIdArray: number[] = [];
+  let invalidAddress = false;
+  let addressInputComponent: AddressInput;
+
+  function onAddressValidation(event: CustomEvent<{ isValidEthereumAddress: boolean; addr: Address }>) {
+    const { isValidEthereumAddress, addr } = event.detail;
+    if (isValidEthereumAddress) {
+      $recipientAddress = addr;
+      invalidAddress = false;
+    } else {
+      invalidAddress = true;
+    }
+  }
 
   $: {
     const stepKey = NFTSteps[activeStep].toLowerCase(); // Convert enum to string and to lowercase
@@ -321,9 +349,11 @@
     nftStepDescription = $t(`bridge.description.nft.${stepKey}`);
   }
 
-  $: if ($selectedToken && amountComponent) {
-    amountComponent.validateAmount();
-  }
+  $: ethereumAddressBinding = $recipientAddress || undefined;
+
+  onDestroy(() => {
+    resetForm();
+  });
 </script>
 
 {#if $activeBridge === BridgeTypes.FUNGIBLE}
@@ -361,13 +391,40 @@
     </Stepper>
 
     <Card class="mt-[32px] w-full md:w-[524px]" title={nftStepTitle} text={nftStepDescription}>
-      <div class="f-between-center w-full gap-4">
-        <Button type="primary" class="px-[28px] py-[14px] rounded-full flex-1 text-white" on:click={back}
-          >Previous Step</Button>
-        <Button type="primary" class="px-[28px] py-[14px] rounded-full flex-1 text-white" on:click={nextStep}
-          >Next Step</Button>
-      </div>
-    </Card>
+      <div class="space-y-[30px]">
+        {#if activeStep === NFTSteps.IMPORT}
+          <div class="f-between-center gap-4">
+            <ChainSelectorWrapper />
+          </div>
+
+          <AddressInput
+            bind:this={addressInputComponent}
+            bind:ethereumAddress={ethereumAddressBinding}
+            on:addressvalidation={onAddressValidation}
+            labelText={$t('bridge.title.nft.address')} />
+
+          <IdInput bind:numbersArray={nftIdArray} />
+        {:else if activeStep === NFTSteps.REVIEW}
+          <div class="f-between-center gap-4">
+            <ChainSelectorWrapper />
+          </div>
+        {:else if activeStep === NFTSteps.CONFIRM}
+          <div class="f-between-center gap-4">
+            <ChainSelectorWrapper />
+          </div>
+        {/if}
+        {nftIdArray}
+        <div class="h-sep" />
+        <div class="f-between-center w-full gap-4">
+          <Button type="primary" class="px-[28px] py-[14px] rounded-full flex-1 text-white" on:click={previousStep}
+            >Previous Step</Button>
+          <Button
+            disabled={invalidAddress}
+            type="primary"
+            class="px-[28px] py-[14px] rounded-full flex-1 text-white"
+            on:click={nextStep}>Next Step</Button>
+        </div>
+      </div></Card>
   </div>
 {/if}
 

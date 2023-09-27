@@ -8,6 +8,9 @@
   import { Icon } from '$components/Icon';
   import { uid } from '$libs/util/uid';
 
+  export let ethereumAddress: Address | string = '';
+  export let labelText = $t('inputs.address_input.label');
+
   enum State {
     Valid = 'valid',
     Invalid = 'invalid',
@@ -17,8 +20,6 @@
   let input: HTMLInputElement;
   let inputId = `input-${uid()}`;
   let state: State;
-
-  export let ethereumAddress: Address | string = '';
 
   const dispatch = createEventDispatcher();
 
@@ -60,7 +61,7 @@
 
 <div class="f-col space-y-2">
   <div class="f-between-center text-secondary-content">
-    <label class="body-regular" for={inputId}>{$t('inputs.address_input.label')}</label>
+    <label class="body-regular" for={inputId}>{labelText}</label>
   </div>
   <div class="relative f-items-center">
     <input
