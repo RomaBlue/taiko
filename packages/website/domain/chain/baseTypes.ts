@@ -125,6 +125,7 @@ interface OtherContracts {
   deterministicDeploymentProxy?: Contract;
   erc4337Entrypoint?: Contract;
   weth?: Contract;
+  usdc?: Contract;
   /** Uniswap V3 */
   v3CoreFactoryAddress?: Contract;
   multicallAddress?: Contract;

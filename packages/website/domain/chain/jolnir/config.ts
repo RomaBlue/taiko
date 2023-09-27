@@ -118,6 +118,12 @@ export const JOLNIR_CONFIG = {
         impl: "0xf86E3b4cde65c0cd59580Ee3F8dd34343E23ea5B",
       },
     },
+    usdc: {
+      name: "USDC",
+      address: {
+        impl: "0xf0380c236Eb7C3Fc51a9b46706D27bA738B0BE7f",
+      },
+    },
     v3CoreFactoryAddress: {
       name: "Uniswap V3 Core Factory",
       address: {
