@@ -35,7 +35,7 @@
     "daisyui": "3.1.7",
     "dotenv": "^16.3.1",
     "eslint": "^8.28.0",
-    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-svelte": "^2.26.0",
     "ethereum-address": "^0.0.4",
